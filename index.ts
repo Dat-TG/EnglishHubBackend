@@ -1,4 +1,16 @@
+require("dotenv").config();
 import express, { Express, Request, Response } from "express";
+import mongoose from "mongoose";
+
+// connections
+mongoose
+  .connect(process.env.DB!)
+  .then(() => {
+    console.log("connected to database successfully");
+  })
+  .catch((e) => {
+    console.log("connect to database unsuccessfully, error: ", e);
+  });
 
 const app: Express = express();
 
