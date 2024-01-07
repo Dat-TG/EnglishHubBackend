@@ -53,6 +53,30 @@ const options: swaggerJsdoc.Options = {
               type: "string",
               description: "The avatar of your account",
             },
+            accessToken: {
+              type: "string",
+              description: "The access token of your account",
+            },
+            refreshToken: {
+              type: "string",
+              description: "The refresh token of your account",
+            },
+            _id: {
+              type: "string",
+              description: "The id of your account",
+            },
+            __v: {
+              type: "number",
+              description: "The version of your account",
+            },
+            createdAt: {
+              type: "string",
+              description: "The time your account was created",
+            },
+            updatedAt: {
+              type: "string",
+              description: "The time your account was updated",
+            },
           },
           example: {
             name: "Lê Công Đắt",
@@ -62,6 +86,12 @@ const options: swaggerJsdoc.Options = {
             type: "user",
             avatar:
               "https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg",
+            accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+            refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+            _id: "60f0b0b9e6b3c40015f1b3a5",
+            __v: 0,
+            createdAt: "2021-07-16T08:08:25.000Z",
+            updatedAt: "2021-07-16T08:08:25.000Z",
           },
         },
         RegisterRequest: {
@@ -87,7 +117,25 @@ const options: swaggerJsdoc.Options = {
             password: "123456",
           },
         },
-        RegisterError: {
+        LoginRequest: {
+          type: "object",
+          required: ["email", "password"],
+          properties: {
+            email: {
+              type: "string",
+              description: "The email of your account",
+            },
+            password: {
+              type: "string",
+              description: "The password of your account",
+            },
+          },
+          example: {
+            email: "dat13102k2@gmail.com",
+            password: "123456",
+          },
+        },
+        ResponseError: {
           type: "object",
           required: ["message"],
           properties: {
