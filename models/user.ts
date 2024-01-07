@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { IUser } from "../types/user";
 const userSchema = new mongoose.Schema({
   name: {
     require: true,
@@ -30,7 +31,23 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  accessToken: {
+    type: String,
+    default: "",
+  },
+  refreshToken: {
+    type: String,
+    default: "",
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now(),
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now(),
+  },
 });
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model<IUser>("User", userSchema);
 export default User;
