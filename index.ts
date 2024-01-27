@@ -1,9 +1,7 @@
 require("dotenv").config();
 import express, { Express, Request, Response } from "express";
 import mongoose from "mongoose";
-import bodyParser from "body-parser";
-import swaggerJsdoc from "swagger-jsdoc";
-import swaggerUi from "swagger-ui-express";
+import cors from "cors";
 
 // connections
 mongoose
@@ -21,6 +19,11 @@ import { apiDocsRouter, authRouter } from "./routes";
 const app: Express = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: process.env.ALLOW_ORIGINS?.split(",") || "*",
+  })
+);
 
 const port = process.env.PORT || 3000;
 
