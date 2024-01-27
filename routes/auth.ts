@@ -125,7 +125,7 @@ router.post("/login", async (req: Request, res: Response) => {
     if (!user) {
       return res
         .status(400)
-        .json({ status: 400, msg: "This account does not exist" });
+        .json({ status: 400, message: "This account does not exist" });
     }
     const isMatch = await bcrypt.compare(password, user.password!);
     if (!isMatch) {

@@ -14,7 +14,7 @@ mongoose
   });
 
 // import routers
-import { apiDocsRouter, authRouter } from "./routes";
+import { apiDocsRouter, authRouter, userRouter } from "./routes";
 
 const app: Express = express();
 app.use(express.json());
@@ -29,5 +29,6 @@ const port = process.env.PORT || 3000;
 
 app.use("/auth", authRouter);
 app.use("/api-docs", apiDocsRouter);
+app.use("/user", userRouter);
 
 app.listen(port, () => console.log(`Listening on port ${port}!`));
