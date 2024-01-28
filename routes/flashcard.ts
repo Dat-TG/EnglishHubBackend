@@ -228,21 +228,25 @@ router.post("/list", auth, async (req: Request, res: Response) => {
  */
 
 router.get("/card/:id", auth, async (req: Request, res: Response) => {
-  const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({
-      status: 400,
-      message: "Invalid id",
-    });
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        status: 400,
+        message: "Invalid id",
+      });
+    }
+    const flashcard = await Flashcard.findById(id);
+    if (!flashcard) {
+      return res.status(400).json({
+        status: 400,
+        message: "Flashcard not found",
+      });
+    }
+    res.json(flashcard._doc);
+  } catch (e) {
+    res.status(500).json({ status: 500, error: (e as Error).message });
   }
-  const flashcard = await Flashcard.findById(id);
-  if (!flashcard) {
-    return res.status(400).json({
-      status: 400,
-      message: "Flashcard not found",
-    });
-  }
-  res.json(flashcard._doc);
 });
 
 /**
@@ -290,21 +294,146 @@ router.get("/card/:id", auth, async (req: Request, res: Response) => {
  */
 
 router.get("/list/:id", auth, async (req: Request, res: Response) => {
-  const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({
-      status: 400,
-      message: "Invalid id",
-    });
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        status: 400,
+        message: "Invalid id",
+      });
+    }
+    const flashcardList = await FlashcardList.findById(id);
+    if (!flashcardList) {
+      return res.status(400).json({
+        status: 400,
+        message: "Flashcard list not found",
+      });
+    }
+    res.json(flashcardList._doc);
+  } catch (e) {
+    res.status(500).json({ status: 500, error: (e as Error).message });
   }
-  const flashcardList = await FlashcardList.findById(id);
-  if (!flashcardList) {
-    return res.status(400).json({
-      status: 400,
-      message: "Flashcard list not found",
+});
+
+/**
+ * @swagger
+ * /flashcard/card/{id}:
+ *   patch:
+ *     summary: Update a flashcard by id
+ *     tags: [Flashcard]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The id of the flashcard
+ *     requestBody:
+ *         required: true
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 front:
+ *                   type: string
+ *                   example: Updated front of the flashcard
+ *                 back:
+ *                   type: string
+ *                   example: Updated back of the flashcard
+ *     responses:
+ *       '200':
+ *         description: Flashcard updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: 60f7a5a1a9e7e40015c0e4a5
+ *                 front:
+ *                   type: string
+ *                   example: Updated front of the flashcard
+ *                 back:
+ *                   type: string
+ *                   example: Updated back of the flashcard
+ *       '400':
+ *         description: Invalid id or flashcard not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 400
+ *                 message:
+ *                   type: string
+ *                   example: Invalid id or flashcard not found
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 500
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error message
+ */
+
+router.patch("/card/:id", auth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        status: 400,
+        message: "Invalid id",
+      });
+    }
+    let flashcard = await Flashcard.findById(id);
+    if (!flashcard) {
+      return res.status(400).json({
+        status: 400,
+        message: "Flashcard not found",
+      });
+    }
+    const { front, back } = req.body as { front: string; back: string };
+    if (!front || !back) {
+      return res.status(400).json({
+        status: 400,
+        message: "Front or back is missing",
+      });
+    }
+    flashcard.front = front;
+    flashcard.back = back;
+    await flashcard.save();
+    const flashcardList = await FlashcardList.findById(flashcard.listId);
+    if (!flashcardList) {
+      return res.status(400).json({
+        status: 400,
+        message: "Flashcard list of this flashcard not found",
+      });
+    }
+    const index = flashcardList.flashcards.findIndex(
+      (f) => f._id.toString() === id
+    );
+    flashcardList.flashcards[index] = flashcard;
+    await flashcardList.save();
+    res.json({
+      status: 200,
+      message: "Flashcard updated successfully",
+      data: flashcard._doc,
     });
+  } catch (e) {
+    res.status(500).json({ status: 500, error: (e as Error).message });
   }
-  res.json(flashcardList._doc);
 });
 
 export default router;
