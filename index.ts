@@ -1,5 +1,5 @@
 require("dotenv").config();
-import express, { Express, Request, Response } from "express";
+import express, { Express } from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 
@@ -14,7 +14,12 @@ mongoose
   });
 
 // import routers
-import { apiDocsRouter, authRouter, userRouter } from "./routes";
+import {
+  apiDocsRouter,
+  authRouter,
+  flashcardRouter,
+  userRouter,
+} from "./routes";
 
 const app: Express = express();
 app.use(express.json());
@@ -30,5 +35,6 @@ const port = process.env.PORT || 3000;
 app.use("/auth", authRouter);
 app.use("/api-docs", apiDocsRouter);
 app.use("/user", userRouter);
+app.use("/flashcard", flashcardRouter);
 
 app.listen(port, () => console.log(`Listening on port ${port}!`));

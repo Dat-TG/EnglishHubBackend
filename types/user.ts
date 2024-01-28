@@ -1,4 +1,4 @@
-interface DocumentResult<T> {
+export interface DocumentResult<T> {
   _doc: T;
 }
 
