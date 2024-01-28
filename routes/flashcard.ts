@@ -436,4 +436,110 @@ router.patch("/card/:id", auth, async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /flashcard/list/{id}:
+ *   patch:
+ *     summary: Update a flashcard list
+ *     description: Update the name of a flashcard list by its ID
+ *     tags:
+ *       - Flashcard
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the flashcard list
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Updated flashcard list name
+ *     responses:
+ *       '200':
+ *         description: Flashcard list updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Flashcard list updated successfully
+ *                 data:
+ *                   $ref: '#/components/schemas/FlashcardList'
+ *       '400':
+ *         description: Invalid id or flashcard list not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 400
+ *                 message:
+ *                   type: string
+ *                   example: Invalid id or flashcard list not found
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 500
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error message
+ */
+
+router.patch("/list/:id", auth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        status: 400,
+        message: "Invalid id",
+      });
+    }
+    const { name } = req.body as { name: string };
+    if (!name) {
+      return res.status(400).json({
+        status: 400,
+        message: "Name is missing",
+      });
+    }
+    let flashcardList = await FlashcardList.findById(id);
+    if (!flashcardList) {
+      return res.status(400).json({
+        status: 400,
+        message: "Flashcard list not found",
+      });
+    }
+    flashcardList.name = name;
+    await flashcardList.save();
+    res.json({
+      status: 200,
+      message: "Flashcard list updated successfully",
+      data: flashcardList._doc,
+    });
+  } catch (e) {
+    res.status(500).json({ status: 500, error: (e as Error).message });
+  }
+});
+
 export default router;
