@@ -637,4 +637,91 @@ router.delete("/card/:id", auth, async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /flashcard/list/{id}:
+ *   delete:
+ *     summary: Delete a flashcard list
+ *     tags:
+ *       - Flashcard
+ *     security:
+ *      - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the flashcard list
+ *     responses:
+ *       '200':
+ *         description: Flashcard list deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Flashcard list deleted successfully
+ *       '400':
+ *         description: Invalid id or flashcard list not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 400
+ *                 message:
+ *                   type: string
+ *                   example: Invalid id or flashcard list not found
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 500
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error message
+ */
+
+router.delete("/list/:id", auth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        status: 400,
+        message: "Invalid id",
+      });
+    }
+    const flashcardList = await FlashcardList.findById(id);
+    if (!flashcardList) {
+      return res.status(400).json({
+        status: 400,
+        message: "Flashcard list not found",
+      });
+    }
+    for (const flashcard of flashcardList.flashcards) {
+      await Flashcard.findByIdAndDelete(flashcard._id);
+    }
+    await flashcardList.deleteOne();
+    res.json({
+      status: 200,
+      message: "Flashcard list deleted successfully",
+    });
+  } catch (e) {
+    res.status(500).json({ status: 500, error: (e as Error).message });
+  }
+});
+
 export default router;
