@@ -178,6 +178,48 @@ const options: swaggerJsdoc.Options = {
             error: "Some server error",
           },
         },
+        FlashcardList: {
+          type: "object",
+          required: ["name", "flashcards"],
+          properties: {
+            name: {
+              type: "string",
+              description: "The name of the flashcard list",
+            },
+            flashcards: {
+              type: "array",
+              description: "The flashcards in the list",
+            },
+          },
+          example: {
+            name: "My Flashcard List",
+            flashcards: [
+              {
+                _id: "60f0b0b9e6b3c40015f1b3a5",
+                front: "Hello",
+                back: "Xin chào",
+              },
+            ],
+          },
+        },
+        Flashcard: {
+          type: "object",
+          required: ["front", "back"],
+          properties: {
+            front: {
+              type: "string",
+              description: "The front side of the flashcard",
+            },
+            back: {
+              type: "string",
+              description: "The back side of the flashcard",
+            },
+          },
+          example: {
+            frontSide: "Hello",
+            backSide: "Xin chào",
+          },
+        },
       },
     },
   },
