@@ -550,6 +550,162 @@ router.patch("/card/:id", auth, async (req: Request, res: Response) => {
 
 /**
  * @swagger
+ * /flashcard/update-flashcards:
+ *   patch:
+ *     summary: Update multiple flashcards
+ *     description: Update the front and back of multiple flashcards
+ *     tags:
+ *       - Flashcard
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               flashcards:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       description: The ID of the flashcard
+ *                     front:
+ *                       type: string
+ *                       description: The updated front of the flashcard
+ *                     back:
+ *                       type: string
+ *                       description: The updated back of the flashcard
+ *                     listId:
+ *                       type: string
+ *                       description: The ID of the flashcard list
+ *             example:
+ *               flashcards:
+ *                 - _id: "flashcardId1"
+ *                   front: "Updated front 1"
+ *                   back: "Updated back 1"
+ *                   listId: "flashcardListId1"
+ *                 - _id: "flashcardId2"
+ *                   front: "Updated front 2"
+ *                   back: "Updated back 2"
+ *                   listId: "flashcardListId2"
+ *     responses:
+ *       '200':
+ *         description: Flashcards updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Flashcards updated successfully
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         description: The ID of the flashcard
+ *                       front:
+ *                         type: string
+ *                         description: The updated front of the flashcard
+ *                       back:
+ *                         type: string
+ *                         description: The updated back of the flashcard
+ *               example:
+ *                 status: 200
+ *                 message: Flashcards updated successfully
+ *                 data:
+ *                   - _id: "flashcardId1"
+ *                     front: "Updated front 1"
+ *                     back: "Updated back 1"
+ *                   - _id: "flashcardId2"
+ *                     front: "Updated front 2"
+ *                     back: "Updated back 2"
+ *       '400':
+ *         description: Flashcard list of one or more flashcards not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 400
+ *                 message:
+ *                   type: string
+ *                   example: Flashcard list of one or more flashcards not found
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 500
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error message
+ */
+
+router.patch(
+  "/update-flashcards",
+  auth,
+  async (req: Request, res: Response) => {
+    try {
+      const { flashcards } = req.body as {
+        flashcards: {
+          _id: string;
+          front: string;
+          back: string;
+          listId: string;
+        }[];
+      };
+      const flashcardList = await FlashcardList.findById(flashcards[0].listId);
+      if (!flashcardList) {
+        return res.status(400).json({
+          status: 400,
+          message: "Flashcard list of this flashcard not found",
+        });
+      }
+      for (const flashcard of flashcards) {
+        const flashcardDb = await Flashcard.findById(flashcard._id);
+        if (!flashcardDb) {
+          continue;
+        }
+        flashcardDb.front = flashcard.front;
+        flashcardDb.back = flashcard.back;
+        await flashcardDb.save();
+        const index = flashcardList.flashcards.findIndex(
+          (f) => f._id.toString() === flashcard._id
+        );
+        flashcardList.flashcards[index].front = flashcard.front;
+        flashcardList.flashcards[index].back = flashcard.back;
+      }
+      await flashcardList.save();
+      res.json({
+        status: 200,
+        message: "Flashcards updated successfully",
+        data: flashcards,
+      });
+    } catch (e) {
+      res.status(500).json({ status: 500, error: (e as Error).message });
+    }
+  }
+);
+
+/**
+ * @swagger
  * /flashcard/list/{id}:
  *   patch:
  *     summary: Update a flashcard list
