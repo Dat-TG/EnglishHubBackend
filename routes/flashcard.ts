@@ -1,7 +1,6 @@
 import express, { Request, Response } from "express";
 import auth from "../middlewares/auth";
 import FlashcardList from "../models/flashcard_list";
-import { IFlashcard } from "../types/flashcard";
 import Flashcard from "../models/flashcard";
 import mongoose from "mongoose";
 
@@ -96,6 +95,119 @@ router.post("/", auth, async (req: Request, res: Response) => {
       status: 201,
       message: "Create flashcard successfully",
       data: flashcard._doc,
+    });
+  } catch (e) {
+    res.status(500).json({ status: 500, error: (e as Error).message });
+  }
+});
+
+/**
+ * @swagger
+ * /flashcard/create-flashcards:
+ *   post:
+ *     summary: Create a new flashcard list with multiple flashcards
+ *     tags: [Flashcard]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               listId:
+ *                 type: string
+ *               flashcards:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     front:
+ *                       type: string
+ *                     back:
+ *                       type: string
+ *             example:
+ *               listId: 123456a7890b
+ *               flashcards:
+ *                 - front: Front of flashcard 1
+ *                   back: Back of flashcard 1
+ *                 - front: Front of flashcard 2
+ *                   back: Back of flashcard 2
+ *     responses:
+ *       '201':
+ *         description: Flashcards created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 201
+ *                 message:
+ *                   type: string
+ *                   example: Create flashcards successfully
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       front:
+ *                         type: string
+ *                       back:
+ *                         type: string
+ *       '400':
+ *         description: Flashcard list not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 400
+ *                 message:
+ *                   type: string
+ *                   example: Flashcard list not found
+ */
+
+router.post("/create-flashcards", auth, async (req: Request, res: Response) => {
+  try {
+    const { listId, flashcards } = req.body as {
+      listId: string;
+      flashcards: { front: string; back: string }[];
+    };
+    if (!mongoose.Types.ObjectId.isValid(listId)) {
+      return res.status(400).json({
+        status: 400,
+        message: "Invalid id",
+      });
+    }
+    const flashcardList = await FlashcardList.findById(listId);
+    if (!flashcardList) {
+      return res.status(400).json({
+        status: 400,
+        message: "Flashcard list not found",
+      });
+    }
+    const newFlashcards = [];
+    for (const flashcard of flashcards) {
+      const newFlashcard = new Flashcard({
+        front: flashcard.front,
+        back: flashcard.back,
+        listId,
+        userId: req.user,
+      });
+      await newFlashcard.save();
+      newFlashcards.push(newFlashcard._doc);
+    }
+    flashcardList.flashcards.push(...newFlashcards);
+    await flashcardList.save();
+    res.status(201).json({
+      status: 201,
+      message: "Create flashcards successfully",
+      data: newFlashcards,
     });
   } catch (e) {
     res.status(500).json({ status: 500, error: (e as Error).message });
