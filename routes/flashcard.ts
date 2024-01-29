@@ -751,6 +751,99 @@ router.delete("/card/:id", auth, async (req: Request, res: Response) => {
 
 /**
  * @swagger
+ * /flashcard/delete-flashcards:
+ *   delete:
+ *     summary: Delete multiple flashcards
+ *     tags:
+ *       - Flashcard
+ *     security:
+ *      - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               flashcardIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *             example:
+ *               flashcardIds: ["id1", "id2"]
+ *     responses:
+ *       '200':
+ *         description: Flashcards deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Flashcards deleted successfully
+ *       '400':
+ *         description: Flashcard list of these flashcards not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 400
+ *                 message:
+ *                   type: string
+ *                   example: Flashcard list of these flashcards not found
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 500
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error message
+ */
+
+router.delete(
+  "/delete-flashcards",
+  auth,
+  async (req: Request, res: Response) => {
+    try {
+      const { flashcardIds } = req.body as { flashcardIds: string[] };
+      const flashcards = await Flashcard.find({ _id: { $in: flashcardIds } });
+      const flashcardList = await FlashcardList.findById(flashcards[0].listId);
+      if (!flashcardList) {
+        return res.status(400).json({
+          status: 400,
+          message: "Flashcard list of these flashcard not found",
+        });
+      }
+      flashcardList.flashcards = flashcardList.flashcards.filter(
+        (f) => !flashcardIds.includes(f._id.toString())
+      );
+      await flashcardList.save();
+      await Flashcard.deleteMany({ _id: { $in: flashcardIds } });
+      res.json({
+        status: 200,
+        message: "Flashcards deleted successfully",
+      });
+    } catch (e) {
+      res.status(500).json({ status: 500, error: (e as Error).message });
+    }
+  }
+);
+
+/**
+ * @swagger
  * /flashcard/list/{id}:
  *   delete:
  *     summary: Delete a flashcard list
