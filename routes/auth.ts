@@ -199,37 +199,62 @@ router.get("/refresh", async (req: Request, res: Response) => {
         .status(400)
         .json({ status: 400, message: "Invalid refresh token" });
     }
-    const accessToken = jwt.verify(
-      user.accessToken,
-      process.env.ACCESS_TOKEN_PRIVATE_KEY as jwt.Secret
-    );
-    if (accessToken) {
-      return res
-        .status(400)
-        .json({ status: 400, message: "Access token is still valid" });
+    try {
+      const accessToken = jwt.verify(
+        user.accessToken,
+        process.env.ACCESS_TOKEN_PRIVATE_KEY as jwt.Secret
+      );
+      if (accessToken) {
+        return res
+          .status(400)
+          .json({ status: 400, message: "Access token is still valid" });
+      }
+      user.accessToken = jwt.sign(
+        {
+          _id: user._id,
+          email: user.email,
+          name: user.name,
+          type: user.type,
+        },
+        process.env.ACCESS_TOKEN_PRIVATE_KEY as jwt.Secret,
+        { expiresIn: "1d" }
+      );
+      user.refreshToken = jwt.sign(
+        {
+          _id: user._id,
+          email: user.email,
+          name: user.name,
+          type: user.type,
+        },
+        process.env.REFRESH_TOKEN_PRIVATE_KEY as jwt.Secret,
+        { expiresIn: "30d" }
+      );
+      await user.save();
+      res.json(user);
+    } catch (error) {
+      user.accessToken = jwt.sign(
+        {
+          _id: user._id,
+          email: user.email,
+          name: user.name,
+          type: user.type,
+        },
+        process.env.ACCESS_TOKEN_PRIVATE_KEY as jwt.Secret,
+        { expiresIn: "1d" }
+      );
+      user.refreshToken = jwt.sign(
+        {
+          _id: user._id,
+          email: user.email,
+          name: user.name,
+          type: user.type,
+        },
+        process.env.REFRESH_TOKEN_PRIVATE_KEY as jwt.Secret,
+        { expiresIn: "30d" }
+      );
+      await user.save();
+      res.json(user);
     }
-    user.accessToken = jwt.sign(
-      {
-        _id: user._id,
-        email: user.email,
-        name: user.name,
-        type: user.type,
-      },
-      process.env.ACCESS_TOKEN_PRIVATE_KEY as jwt.Secret,
-      { expiresIn: "1d" }
-    );
-    user.refreshToken = jwt.sign(
-      {
-        _id: user._id,
-        email: user.email,
-        name: user.name,
-        type: user.type,
-      },
-      process.env.REFRESH_TOKEN_PRIVATE_KEY as jwt.Secret,
-      { expiresIn: "30d" }
-    );
-    await user.save();
-    res.json(user);
   } catch (e: any) {
     res.status(500).json({ status: 500, error: e.message });
   }
