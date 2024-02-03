@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
+import User from "../models/user";
 
 declare global {
   namespace Express {
@@ -25,6 +26,12 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
       ) as {
         _id: string;
       };
+      const user = await User.findById(isValid._id);
+      if (!user) {
+        return res
+          .status(401)
+          .json({ status: 401, message: "No user found, access denied" });
+      }
       req.user = isValid._id;
       req.token = token;
       next();
