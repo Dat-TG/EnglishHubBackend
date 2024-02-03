@@ -72,6 +72,33 @@ import User from "../models/user";
  *             schema:
  *               $ref: '#/components/schemas/ServerError'
  *
+ * /auth/refresh:
+ *   get:
+ *     summary: Refresh access token
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Access token refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Invalid refresh token or access token is still valid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ResponseError'
+ *       500:
+ *         description: Some server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ServerError'
+ *
+ *
  */
 router.post("/register", async (req: Request, res: Response) => {
   try {
@@ -155,6 +182,54 @@ router.post("/login", async (req: Request, res: Response) => {
     );
     user = await user.save();
     res.json(user._doc);
+  } catch (e: any) {
+    res.status(500).json({ status: 500, error: e.message });
+  }
+});
+
+// Refresh Token
+router.get("/refresh", async (req: Request, res: Response) => {
+  try {
+    const refreshToken = req.header("Authorization")?.replace("Bearer ", "");
+    const user = await User.findOne({ refreshToken }).select(
+      "accessToken refreshToken"
+    );
+    if (!user) {
+      return res
+        .status(400)
+        .json({ status: 400, message: "Invalid refresh token" });
+    }
+    const accessToken = jwt.verify(
+      user.accessToken,
+      process.env.ACCESS_TOKEN_PRIVATE_KEY as jwt.Secret
+    );
+    if (accessToken) {
+      return res
+        .status(400)
+        .json({ status: 400, message: "Access token is still valid" });
+    }
+    user.accessToken = jwt.sign(
+      {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        type: user.type,
+      },
+      process.env.ACCESS_TOKEN_PRIVATE_KEY as jwt.Secret,
+      { expiresIn: "1d" }
+    );
+    user.refreshToken = jwt.sign(
+      {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        type: user.type,
+      },
+      process.env.REFRESH_TOKEN_PRIVATE_KEY as jwt.Secret,
+      { expiresIn: "30d" }
+    );
+    await user.save();
+    res.json(user);
   } catch (e: any) {
     res.status(500).json({ status: 500, error: e.message });
   }
