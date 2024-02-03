@@ -77,7 +77,7 @@ import User from "../models/user";
  *     summary: Refresh access token
  *     tags: [Authentication]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *     responses:
  *       200:
  *         description: Access token refreshed successfully

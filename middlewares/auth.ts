@@ -18,21 +18,32 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
         .status(401)
         .json({ status: 401, message: "No auth token, access denied" });
     }
-    const isValid = jwt.verify(
-      token,
-      process.env.ACCESS_TOKEN_PRIVATE_KEY as string
-    ) as {
-      _id: string;
-    };
-    if (!isValid) {
-      return res.status(401).json({
-        status: 401,
-        message: "Token verification failed, access denied",
-      });
+    try {
+      const isValid = jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_PRIVATE_KEY as string
+      ) as {
+        _id: string;
+      };
+      req.user = isValid._id;
+      req.token = token;
+      next();
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        return res.status(401).json({
+          status: 401,
+          message: "Token expired, access denied",
+        });
+      } else if (error instanceof jwt.JsonWebTokenError) {
+        return res.status(401).json({
+          status: 401,
+          message: "Invalid token, access denied",
+          details: error.message,
+        });
+      } else {
+        throw error; // Rethrow other errors
+      }
     }
-    req.user = isValid._id;
-    req.token = token;
-    next();
   } catch (e) {
     res.status(500).json({ status: 500, error: (e as Error).message });
   }
